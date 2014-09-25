@@ -1,0 +1,280 @@
+<?php
+//ini_set('display_errors', 1);
+function mantis_feeder_menu(){
+    $items['mantis_feeder'] = array(
+        'title' => 'Mantis Feeder',
+        'page callback' => 'mantis_feeder',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/list'] = array(
+        'title' => 'Mantis Feeder',
+        'page callback' => 'mantis_feeder_list',
+        'access callback' => true,
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/collection_config'] = array(
+        'title' => 'Mantis Feeder - Collection Config',
+        'page callback' => 'mantis_feeder_collection_config',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/add_specie'] = array(
+        'page callback' => 'mantis_feeder_add_specie',
+        'delivery callback' => 'true_ajax',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/get_group_data'] = array(
+        'page callback' => 'mantis_feeder_get_group_data',
+        'delivery callback' => 'true_ajax',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/get_active_groups'] = array(
+        'page callback' => 'mantis_feeder_active_groups',
+        'delivery callback' => 'true_ajax',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/set_active_group'] = array(
+        'page callback' => 'mantis_feeder_set_active_group',
+        'delivery callback' => 'true_ajax',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    $items['mantis_feeder/add_feed_entry'] = array(
+        'page callback' => 'mantis_feeder_add_feed_entry',
+        'delivery callback' => 'true_ajax',
+        'access arguments' => array('mantis_user'),
+        'type' => MENU_CALLBACK,
+    );
+    return $items;
+}
+
+function mantis_feeder_permission(){
+    return array(
+        'mantis_user' => array(
+            'title' => t('Mantis User'),
+            'description' => t('Allow use of the Mantis Modules'),
+        ),
+    );
+}
+
+function mantis_feeder(){
+    $content  = '';
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery.min.js');
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery.contextMenu.js');
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery-ui-1.10.0.custom.min.js');
+    drupal_add_js(drupal_get_path('module','mantis_feeder').'/mantis_feeder_main.js');
+    drupal_add_js(drupal_get_path('module','mantis_feeder').'/mantis_feeder_contextMenu.js');
+    drupal_add_css(drupal_get_path('module','jquery_scripts').'/css/smoothness/jquery-ui-1.10.0.custom.min.css');
+    drupal_add_css(drupal_get_path('module','mantis_feeder').'/mantis_feeder.css');
+    drupal_add_css(drupal_get_path('module','jquery_scripts').'/jquery.contextMenu.css');
+
+    $content .= '<div class="schedule_table"></div>';
+    $content .= l('Config','mantis_feeder/collection_config');
+
+    return $content;
+}
+
+function mantis_feeder_list(){
+    $content  = '';
+    $data = mantis_feeder_get_group_data();
+    $config = mantis_feeder_active_groups();
+    $species = array();
+    foreach($config as $c){
+        $species[$c['s']] = 1;
+    }
+    $species = array_keys($species);
+    foreach($data['species'] as $d){
+        foreach($species as $s){
+            if($d['id'] == $s){
+                $content .= '<div class="feeder_entry" specie_id="'.$s.'"><span>'.$d['name'].'</span><span>'.$d['common_name'].'</span></div>'."\n";
+                continue;
+            }
+        }
+
+    }
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery.min.js');
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery.contextMenu.js');
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery-ui-1.10.0.custom.min.js');
+    drupal_add_js(drupal_get_path('module','mantis_feeder').'/mantis_feeder_contextMenu.js');
+    drupal_add_css(drupal_get_path('module','jquery_scripts').'/css/smoothness/jquery-ui-1.10.0.custom.min.css');
+    drupal_add_css(drupal_get_path('module','mantis_feeder').'/mantis_feeder.css');
+    drupal_add_css(drupal_get_path('module','jquery_scripts').'/jquery.contextMenu.css');
+    drupal_add_js('
+    var collection_data = null;
+
+    $(document).ready(function(){
+        load_data();
+        hook_menu();
+    });
+
+    function load_data(){
+        $.ajax({
+            type: "GET",
+            url: "/mantis_feeder/get_group_data",
+            success: function(data){
+                collection_data = data;
+            },
+        });
+    }',array('type'=>'inline'));
+    drupal_add_css('
+        div.feeder_entry span {
+            width: 300px;
+            float: left;
+        }
+    ',array('type'=>'inline'));
+    return $content;
+}
+
+function mantis_feeder_add_specie($data = null){
+    if(!empty($_POST)){
+        $data = $_POST;
+    }
+    if($data['id'] == 0){
+        $id = db_insert('mantis_feeder_species');
+    }else{
+        $id = db_update('mantis_feeder_species')
+        ->condition('id',$data['id']);
+    }
+    $id = $id
+    ->fields(array(
+        'name' => $data['name'],
+        'common_name' => $data['common_name'],
+    ))
+    ->execute();
+    return array(
+        'result' => true,
+        'id' => $id,
+    );
+}
+
+function mantis_feeder_add_feed_entry($data = null){
+    if(!empty($_POST)){
+        $data = $_POST;
+    }
+
+    $time = strtotime('now');
+
+    db_insert('mantis_feeder_feed_events')
+    ->fields(array(
+        'specie' => $data['specie'],
+        'collection' => $data['collection'],
+        'timestamp' => $time,
+    ))
+    ->execute();
+    //Update the last feed
+    db_update('mantis_feeder_active_groups')
+    ->fields(array(
+        'last_feed' => $time,
+    ))
+    ->condition('specie',$data['specie'])
+    ->condition('collection',$data['collection'])
+    ->execute();
+    return array(
+        'result' => true,
+    );
+}
+
+function mantis_feeder_set_active_group($data = null){
+    if(!empty($_POST)){
+        $data = $_POST;
+    }
+    //Delete active group entry
+    db_delete('mantis_feeder_active_groups')
+    ->condition('specie',$data['specie'])
+    ->condition('collection',$data['collection'])
+    ->execute();
+    if($data['value'] == 'true'){
+        //Get last fed timestamp
+        $t = db_select('mantis_feeder_feed_events','e')
+        ->fields('e',array(
+            'timestamp',
+        ))
+        ->condition('specie',$data['specie'])
+        ->condition('collection',$data['collection'])
+        ->execute()
+        ->fetchColumn(0);
+        if(empty($t)){
+            $t = 0;
+        }
+        $result = db_insert('mantis_feeder_active_groups')
+        ->fields(array(
+            'specie' => $data['specie'],
+            'collection' => $data['collection'],
+            'last_feed' => $t,
+        ))
+        ->execute();
+    }
+    return array(
+        'result' => true,
+    );
+}
+
+function mantis_feeder_collection_config(){
+    $content  = '';
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery.min.js');
+    drupal_add_js(drupal_get_path('module','jquery_scripts').'/jquery-ui-1.10.0.custom.min.js');
+    drupal_add_js(drupal_get_path('module','mantis_feeder').'/mantis_feeder_collection_config.js');
+    drupal_add_css(drupal_get_path('module','jquery_scripts').'/css/smoothness/jquery-ui-1.10.0.custom.min.css');
+    drupal_add_css(drupal_get_path('module','mantis_feeder').'/mantis_feeder.css');
+
+    $content .= <<<HTML
+    <div id="new_specie_dialog">
+        <input type="hidden" id="new_specie_id">
+        Name: <input type="text" id="new_specie_name" style="width:300px;"><br/>
+        Common Name: <input type="text" id="new_specie_common_name" style="width:250px;"><br/>
+        <input type="button" id="new_specie_add_button" value="Add Specie">
+    </div>
+HTML;
+    return $content;
+}
+
+function mantis_feeder_get_group_data(){
+    $species = db_select('mantis_feeder_species','s')
+    ->fields('s',array(
+        'id',
+        'name',
+        'common_name',
+    ))
+    ->orderBy('name')
+    ->execute()
+    ->fetchAll(PDO::FETCH_ASSOC);
+
+    $collections = db_select('mantis_feeder_collections','c')
+    ->fields('c',array(
+        'id',
+        'description',
+        'frequency',
+    ))
+    ->orderBy('description')
+    ->execute()
+    ->fetchAllAssoc('id',PDO::FETCH_ASSOC);
+    return array(
+        'species' => $species,
+        'collections' => $collections,
+        'timestamp' => strtotime('now'),
+    );
+}
+
+function mantis_feeder_active_groups(){
+    $result = db_select('mantis_feeder_active_groups','g')
+    ->fields('g',array(
+        'specie',
+        'collection',
+        'last_feed',
+    ))
+    ->execute();
+    $groups = array();
+    foreach($result as $r){
+        $groups[] = array(
+            's' => $r->specie,
+            'c' => $r->collection,
+            'l' => $r->last_feed,
+        );
+    }
+
+    return $groups;
+}

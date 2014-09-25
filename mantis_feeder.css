@@ -1,0 +1,21 @@
+@CHARSET "UTF-8";
+
+.schedule_data_table .name,
+.schedule_data_table .common_name,
+.schedule_data_table .collection {
+    width: 200px;
+    float: left;
+}
+
+.schedule_data_table .name,
+.schedule_data_table .common_name {
+    padding-right: 5px;
+}
+
+.due {
+    background-color: #FFDDDD;
+}
+
+.schedule_data_table {
+    padding-bottom: 20px;
+}

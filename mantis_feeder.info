@@ -1,0 +1,10 @@
+name = Mantis Feeder
+description = Mantis/Animal Feeding Scheduler
+core = 7.x
+package = Willett AVT
+ 
+files[] = mantis_feeder.module
+
+#Because I'm lazy (ajax functions)
+dependencies[] = jarvis
+dependencies[] = jquery_scripts

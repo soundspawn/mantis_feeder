@@ -1,0 +1,112 @@
+<?php
+function mantis_feeder_schema() {
+    $schema['mantis_feeder_species'] = array(
+        'description' => 'Specie header',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'description' => 'UID',
+                'not null' => true,
+            ),
+            'name' => array(
+                'type' => 'char',
+                'description' => 'Specie Name',
+                'length' => 80,
+                'not null' => 'true',
+                'default' => '',
+            ),
+            'common_name' => array(
+                'type' => 'char',
+                'description' => 'Common Name',
+                'length' => 50,
+                'not null' => 'true',
+                'default' => '',
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+    $schema['mantis_feeder_active_groups'] = array(
+        'description' => 'TODO: please describe this table!',
+        'fields' => array(
+            'specie' => array(
+                'description' => 'TODO: please describe this field!',
+                'type' => 'int',
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'collection' => array(
+                'description' => 'TODO: please describe this field!',
+                'type' => 'int',
+                'not null' => TRUE,
+                'default' => 0,
+            ),
+            'last_feed' => array(
+                'type' => 'int',
+                'description' => 'Timestamp of the last feeding event',
+                'not null' => true,
+            ),
+        ),
+        'unique keys' => array(
+            'unique_collection' => array(
+                'specie',
+                'collection',
+            ),
+        ),
+    );
+    $schema['mantis_feeder_collections'] = array(
+        'description' => 'Specie Groups, for age or feeding frequency',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'description' => 'UID',
+                'not null' => true,
+            ),
+            'description' => array(
+                'type' => 'char',
+                'description' => 'Collection Description',
+                'length' => 50,
+                'not null' => true,
+            ),
+            'frequency' => array(
+                'type' => 'int',
+                'description' => 'feed every X days',
+                'not null' => true,
+                'default' => 1,
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+    $schema['mantis_feeder_feed_events'] = array(
+        'description' => 'Feeding Event - detail table',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'description' => 'UID',
+                'not null' => true,
+            ),
+            'specie' => array(
+                'type' => 'int',
+                'description' => 'Specie that was fed',
+                'not null' => true,
+            ),
+            'collection' => array(
+                'type' => 'int',
+                'description' => 'Specie group',
+                'not null' => true,
+            ),
+            'timestamp' => array(
+                'type' => 'int',
+                'description' => 'Timestamp of the feeding event',
+                'not null' => true,
+            ),
+        ),
+        'primary key' => array('id'),
+        'indexes' => array(
+            'unique_collection' => array(
+                'specie',
+                'collection',
+            ),
+        ),
+    );
+    return $schema;
+}
