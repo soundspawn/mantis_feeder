@@ -148,6 +148,7 @@ function feed_group(t){
         success: function(data){
             if(data.result){
                 $(t).removeClass('due');
+                load_data();
             }
         },
     });
