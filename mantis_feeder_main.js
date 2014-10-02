@@ -1,5 +1,6 @@
 var collection_data = null;
 var collection_config = null;
+var refresh_timer = null;
 
 function load_data(){
     $.ajax({
@@ -149,12 +150,19 @@ function feed_group(t){
             if(data.result){
                 $(t).removeClass('due');
                 load_data();
+                set_timer();
             }
         },
     });
 }
 
+function set_timer(){
+    clearInterval(refresh_timer);
+    refresh_timer = setInterval(load_data,(5*60*1000));
+}
+
 $(document).ready(function(){
     $( document ).tooltip();
     load_data();
+    set_timer();
 });
