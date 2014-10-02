@@ -1,4 +1,5 @@
 function hook_menu(){
+    $.contextMenu('destroy','.feeder_entry');
     $.contextMenu({
         selector: '.feeder_entry', 
         callback: function(key, options) {
